@@ -1,0 +1,35 @@
+name: Build Windows Portable EXE v1.3.1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install packages
+        run: pip install -r requirements.txt
+      - name: Download YuNet and SFace
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx" -OutFile "face_detection_yunet_2023mar.onnx"
+          Invoke-WebRequest -Uri "https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx" -OutFile "face_recognition_sface_2021dec.onnx"
+      - name: Build EXE
+        shell: powershell
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name "AI_Group_Photo_Filter_v1.3.1_YuNet_SFace" --add-data "face_detection_yunet_2023mar.onnx;." --add-data "face_recognition_sface_2021dec.onnx;." ai_group_photo_filter_v1_3_1.py
+      - name: Create Portable ZIP
+        shell: powershell
+        run: Compress-Archive -Path "dist\AI_Group_Photo_Filter_v1.3.1_YuNet_SFace.exe" -DestinationPath "AI_Group_Photo_Filter_v1.3.1_Portable_Windows.zip"
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Group-Photo-Filter-v1.3.1-Portable-Windows
+          path: AI_Group_Photo_Filter_v1.3.1_Portable_Windows.zip
+          retention-days: 30
